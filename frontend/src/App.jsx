@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, Routes, Route } from 'react-router-dom';
-import { getDict } from './i18n.js'; // <-- Corregido para usar tu archivo original
+import { getDict } from './i18n.js';
 import { Home, Package, Users, BarChart3, Settings as Cog, Download, Lock, LogOut } from 'lucide-react';
 import Pos from './pages/Pos.jsx';
 import Products from './pages/Products.jsx';
@@ -67,6 +67,7 @@ export default function App(){
       {/* Sidebar */}
       <aside className="bg-white flex flex-col shadow-lg">
         <div className="p-4 border-b">
+          {/* CORREGIDO PARA APUNTAR A .png */}
           <img src="/logo.png" alt="El Paso Furniture & Style Logo" className="w-full h-auto" />
           <p className="text-center text-xs text-gray-500 mt-2 font-heading">YOUR COMFORT, OUR PRIORITY</p>
         </div>
