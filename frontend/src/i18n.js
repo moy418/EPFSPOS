@@ -23,8 +23,8 @@ const es = {
   admin_login: "Admin (PIN)",
   logout: "Salir Admin",
   pdf: "PDF",
-  language: "Idioma"
-  history: "Historial",
+  language: "Idioma",
+  history: "Historial"
 };
 
 const en = {
@@ -52,8 +52,8 @@ const en = {
   admin_login: "Admin (PIN)",
   logout: "Logout Admin",
   pdf: "PDF",
-  language: "Language"
-  history: "History",
+  language: "Language",
+  history: "History"
 };
 
 export function getDict(lang) { return lang === 'en' ? en : es; }
