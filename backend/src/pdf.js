@@ -37,6 +37,7 @@ export function generateSalePDF({ sale, items, settings, docType = 'ticket' }) {
   doc.text(`Tax (${sale.tax_rate}%): $${(sale.tax_cents/100).toFixed(2)}`, { align: 'right' });
   doc.fontSize(12).text(`TOTAL: $${(sale.total_cents/100).toFixed(2)}`, { align: 'right' });
   doc.fontSize(10).text(`Payment: ${sale.payment_method || '—'}`, { align: 'right' });
+  if (sale.payment_details) doc.text(`Details: ${sale.payment_details}`, { align: 'right' });
 
   doc.end();
   return done;

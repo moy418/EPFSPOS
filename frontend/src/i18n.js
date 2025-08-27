@@ -24,6 +24,7 @@ const es = {
   logout: "Salir Admin",
   pdf: "PDF",
   language: "Idioma"
+  history: "Historial",
 };
 
 const en = {
@@ -52,6 +53,7 @@ const en = {
   logout: "Logout Admin",
   pdf: "PDF",
   language: "Language"
+  history: "History",
 };
 
 export function getDict(lang) { return lang === 'en' ? en : es; }

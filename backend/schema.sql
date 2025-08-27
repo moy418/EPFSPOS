@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS sales (
   tax_cents INTEGER NOT NULL DEFAULT 0,
   total_cents INTEGER NOT NULL DEFAULT 0,
   payment_method TEXT, note TEXT,
+  payment_details TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (customer_id) REFERENCES customers(id)
 );

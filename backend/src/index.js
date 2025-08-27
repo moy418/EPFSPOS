@@ -149,6 +149,7 @@ app.post('/api/customers', validate(customerSchema), (req, res) => {
 });
 
 // Helpers
+// Sales (con creación de cliente al vuelo)const saleItemSchema = z.object({ name: z.string().min(1).max(200), sku: z.string().max(100).optional().nullable(), price: z.number().nonnegative(), discount: z.number().min(0).optional().default(0), qty: z.number().int().positive().max(1000) });const newCustomerSchema = z.object({ name: z.string().min(1), phone: z.string().optional().nullable(), address: z.string().optional().nullable() });const saleSchema = z.object({  status: z.enum(['paid','layaway','quote']).optional().default('paid'),  customer_id: z.number().int().positive().optional().nullable(),  new_customer: newCustomerSchema.optional().nullable(),  seller_name: z.string().max(200).optional().nullable(),  payment_method: z.string().max(50).optional().nullable(),  payment_details: z.string().max(200).optional().nullable(),  discount_total: z.number().min(0).optional().default(0),  items: z.array(saleItemSchema).min(1),  note: z.string().max(1000).optional().nullable()});app.post('/api/sales', validate(saleSchema), (req, res) => {  const body = req.body;  let customer_id = body.customer_id || null;  const settings = getSettings();  const tax_rate = Number(settings.tax_rate || process.env.TAX_RATE || 8.25);  const tx = db.transaction(() => {    // Si se envían datos de un nuevo cliente, crearlo primero    if (body.new_customer && body.new_customer.name) {      const info = db.prepare('INSERT INTO customers(name,phone,address) VALUES(?,?,?)')        .run(body.new_customer.name, body.new_customer.phone || null, body.new_customer.address || null);      customer_id = info.lastInsertRowid;    }    let subtotal_cents = 0;    body.items.forEach(it => {      const price_c = cents(it.price);      const disc_c = cents(it.discount || 0);      const qty = it.qty;      const line = Math.max(0, (price_c - disc_c)) * qty;      it._computed = { price_c, disc_c, qty, line };      subtotal_cents += line;    });    const discTotal = Math.min(subtotal_cents, cents(body.discount_total || 0));    const taxable_base = Math.max(0, subtotal_cents - discTotal);    const tax_cents = Math.round(taxable_base * (tax_rate / 100));    const total_cents = taxable_base + tax_cents;    const saleInfo = db.prepare(`      INSERT INTO sales(status,customer_id,seller_name,subtotal_cents,discount_total_cents,tax_rate,tax_cents,total_cents,payment_method,payment_details,note)      VALUES(?,?,?,?,?,?,?,?,?,?,?)    `).run(body.status, customer_id, body.seller_name, subtotal_cents, discTotal, tax_rate, tax_cents, total_cents, body.payment_method, body.payment_details, body.note);    const sale_id = saleInfo.lastInsertRowid;    const insItem = db.prepare(`INSERT INTO sale_items(sale_id,product_name,sku,qty,price_cents,discount_cents,line_total_cents) VALUES(?,?,?,?,?,?,?)`);    for (const it of body.items) {      insItem.run(sale_id, it.name, it.sku, it._computed.qty, it._computed.price_c, it._computed.disc_c, it._computed.line);    }    if (body.status === 'paid' && total_cents > 0) {      db.prepare(`INSERT INTO payments(sale_id,method,amount_cents) VALUES(?,?,?)`).run(sale_id, body.payment_method, total_cents);    }    return { sale_id, total_cents, tax_cents };  });  const { sale_id, total_cents, tax_cents } = tx();  res.json({ id: sale_id, total: dollars(total_cents), tax: dollars(tax_cents) });});
 function getSettings() {
   const rows = db.prepare('SELECT key,value FROM settings').all();
   const s = {}; rows.forEach(r => s[r.key]=r.value);
@@ -156,67 +157,6 @@ function getSettings() {
 }
 
 // Sales
-const saleItemSchema = z.object({ name: z.string().min(1).max(200), sku: z.string().max(100).optional().nullable(), price: z.number().nonnegative(), discount: z.number().min(0).optional().default(0), qty: z.number().int().positive().max(1000) });
-const saleSchema = z.object({
-  status: z.enum(['paid','layaway','quote']).optional().default('paid'),
-  customer_id: z.number().int().positive().optional().nullable(),
-  seller_name: z.string().max(200).optional().nullable(),
-  payment_method: z.string().max(50).optional().nullable(),
-  discount_total: z.number().min(0).optional().default(0),
-  items: z.array(saleItemSchema).min(1),
-  note: z.string().max(1000).optional().nullable()
-});
-app.post('/api/sales', validate(saleSchema), (req, res) => {
-  const body = req.body;
-  const status = body.status || 'paid';
-  const customer_id = body.customer_id || null;
-  const seller_name = body.seller_name || null;
-  const payment_method = body.payment_method || null;
-  const items = body.items;
-  const discount_total_cents = cents(body.discount_total || 0);
-  const settings = getSettings();
-  const tax_rate = Number(settings.tax_rate || process.env.TAX_RATE || 8.25);
-
-  let subtotal_cents = 0;
-  items.forEach(it => {
-    const price_c = cents(it.price);
-    const disc_c = cents(it.discount || 0);
-    const qty = it.qty;
-    const line = Math.max(0, (price_c - disc_c)) * qty;
-    it._computed = { price_c, disc_c, qty, line };
-    subtotal_cents += line;
-  });
-
-  const discTotal = Math.min(subtotal_cents, discount_total_cents);
-  const taxable_base = Math.max(0, subtotal_cents - discTotal);
-  const tax_cents = Math.round(taxable_base * (tax_rate / 100));
-  const total_cents = taxable_base + tax_cents;
-
-  const tx = db.transaction(() => {
-    const info = db.prepare(`
-      INSERT INTO sales(status,customer_id,seller_name,subtotal_cents,discount_total_cents,tax_rate,tax_cents,total_cents,payment_method,note)
-      VALUES(?,?,?,?,?,?,?,?,?,?)
-    `).run(status, customer_id, seller_name, subtotal_cents, discTotal, tax_rate, tax_cents, total_cents, payment_method, body.note || null);
-    const sale_id = info.lastInsertRowid;
-
-    const insItem = db.prepare(`
-      INSERT INTO sale_items(sale_id,product_name,sku,qty,price_cents,discount_cents,line_total_cents)
-      VALUES(?,?,?,?,?,?,?)
-    `);
-    for (const it of items) {
-      insItem.run(sale_id, it.name, it.sku || null, it._computed.qty, it._computed.price_c, it._computed.disc_c, it._computed.line);
-    }
-
-    if (status === 'paid' && total_cents > 0) {
-      db.prepare(`INSERT INTO payments(sale_id,method,amount_cents) VALUES(?,?,?)`)
-        .run(sale_id, payment_method || 'cash', total_cents);
-    }
-
-    return sale_id;
-  });
-
-  const sale_id = tx();
-  res.json({ id: sale_id, total: dollars(total_cents), tax: dollars(tax_cents) });
 });
 
 app.get('/api/sales', (req, res) => {
