@@ -117,6 +117,7 @@ app.post('/api/products', adminOnly, validate(productSchema), (req, res) => {
     .run(name, sku || null, cents(price));
   res.json({ id: info.lastInsertRowid });
 });
+app.get('/api/products/search', (req, res) => {  const { q = '' } = req.query;  if (q.length < 2) return res.json([]);  const rows = db.prepare('SELECT id, name, sku, price_cents FROM products WHERE name LIKE ? ORDER BY name LIMIT 10').all(`%%`);  res.json(rows);});
 app.put('/api/products/:id', adminOnly, validate(productSchema), (req, res) => {
   const { name, price, sku } = req.body;
   db.prepare('UPDATE products SET name=?, sku=?, price_cents=? WHERE id=?')
