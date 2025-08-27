@@ -4,16 +4,9 @@ services:
     container_name: epfs-pos-api
     ports:
       - "3001:3000"
-    environment:
-      NODE_ENV: production
-      ADMIN_PIN: "1092"
-      TAX_RATE: "8.25"
-      BRAND_NAME: "El Paso Furniture & Style"
-      BRAND_ADDRESS: "Rellena en Ajustes"
-      BRAND_PHONE: "Rellena en Ajustes"
-      BRAND_TAXID: "Rellena en Ajustes"
-      JWT_SECRET: "change_this_secret"
-      BACKUP_CRON: "0 2 * * *"
+    # Carga las variables desde el archivo .env en la raíz del proyecto
+    env_file:
+      - .env
     volumes:
       - /srv/epfs-pos/data:/app/data
       - /srv/epfs-pos/backups:/app/backups
@@ -25,7 +18,6 @@ services:
     container_name: epfs-pos-web
     depends_on:
       - api
-    # ya no exponemos 5173 públicamente; Caddy hablará con web internamente
     expose:
       - "80"
     restart: unless-stopped

@@ -1,0 +1,11 @@
+# Dependencias
+node_modules/
+
+# Archivos de entorno
+.env
+
+# Logs y bases de datos locales
+*.log
+/backend/data/
+/backend/backups/
+/backend/exports/
