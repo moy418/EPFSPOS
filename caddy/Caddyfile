@@ -1,0 +1,11 @@
+# Servir la web sin puerto
+epfs-pos.local {
+	encode zstd gzip
+	reverse_proxy web:80
+}
+
+# Acceso por IP o hostname del equipo (por si el cliente no usa .local)
+:80 {
+	encode zstd gzip
+	reverse_proxy web:80
+}

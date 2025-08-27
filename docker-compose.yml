@@ -1,0 +1,42 @@
+services:
+  api:
+    build: ./backend
+    container_name: epfs-pos-api
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: production
+      ADMIN_PIN: "1092"
+      TAX_RATE: "8.25"
+      BRAND_NAME: "El Paso Furniture & Style"
+      BRAND_ADDRESS: "Rellena en Ajustes"
+      BRAND_PHONE: "Rellena en Ajustes"
+      BRAND_TAXID: "Rellena en Ajustes"
+      JWT_SECRET: "change_this_secret"
+      BACKUP_CRON: "0 2 * * *"
+    volumes:
+      - /srv/epfs-pos/data:/app/data
+      - /srv/epfs-pos/backups:/app/backups
+      - /srv/epfs-pos/exports:/app/exports
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    container_name: epfs-pos-web
+    depends_on:
+      - api
+    # ya no exponemos 5173 públicamente; Caddy hablará con web internamente
+    expose:
+      - "80"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: epfs-pos-caddy
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped

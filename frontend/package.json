@@ -1,0 +1,26 @@
+{
+  "name": "epfs-pos-frontend",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+  "build": "VITE_APP_VERSION=$(node -p \"require('./package.json').version+'-'+Date.now()\") vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "clsx": "2.1.1",
+    "dayjs": "1.11.13",
+    "lucide-react": "0.454.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.26.2",
+    "sonner": "1.5.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.47",
+    "tailwindcss": "3.4.13",
+    "vite": "5.4.2"
+  }
+}
