@@ -11,6 +11,7 @@ COPY vite.config.js ./vite.config.js
 COPY tailwind.config.js ./tailwind.config.js
 COPY postcss.config.js ./postcss.config.js
 COPY src ./src
+COPY public ./public   # <-- ESTA ES LA LÍNEA QUE FALTABA
 
 # 3) build
 RUN npm run build
