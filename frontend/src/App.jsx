@@ -1,163 +1,111 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Users, Package, Settings, FileText, BarChart, LogOut, Lock } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { NavLink, Routes, Route } from 'react-router-dom';
+import { getDict } from './i18n.js'; // <-- Corregido para usar tu archivo original
+import { Home, Package, Users, BarChart3, Settings as Cog, Download, Lock, LogOut } from 'lucide-react';
+import Pos from './pages/Pos.jsx';
+import Products from './pages/Products.jsx';
+import Customers from './pages/Customers.jsx';
+import Reports from './pages/Reports.jsx';
+import Settings from './pages/Settings.jsx';
+import ExportPage from './pages/Export.jsx';
 import { Toaster, toast } from 'sonner';
 
-import Pos from './pages/Pos';
-import Customers from './pages/Customers';
-import Products from './pages/Products';
-import SettingsPage from './pages/Settings';
-import ExportPage from './pages/Export';
-import Reports from './pages/Reports';
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'dev';
 
-import es from './i18n/es.json';
-import en from './i18n/en.json';
+function SideLink({ to, children }) {
+  return (
+    <NavLink
+      to={to}
+      end={to==='/'}
+      className={({isActive}) => `sidebar-link ${isActive ? 'active' : ''}`}
+    >
+      {children}
+    </NavLink>
+  );
+}
 
-const translations = { es, en };
+export default function App(){
+  const [lang, setLang] = useState(localStorage.getItem('lang') || 'es');
+  const t = useMemo(() => getDict(lang), [lang]);
+  const [adminToken, setAdminToken] = useState(localStorage.getItem('adminToken') || '');
 
-function App() {
-  const [lang, setLang] = useState('es');
-  const t = translations[lang];
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [adminToken, setAdminToken] = useState(localStorage.getItem('adminToken') || null);
-  const [showAdminPinModal, setShowAdminPinModal] = useState(false);
-
+  useEffect(() => localStorage.setItem('lang', lang), [lang]);
   useEffect(() => {
-    // Si no hay token y no estamos en /admin (para evitar loop) y no estamos en la página de inicio, redirigir
-    // No redirigimos a /pos por defecto si no hay token para permitir ver productos
-    // if (!adminToken && location.pathname !== '/admin' && location.pathname !== '/') {
-    //   navigate('/');
-    // }
-  }, [adminToken, location.pathname, navigate]);
+    if(adminToken) localStorage.setItem('adminToken', adminToken);
+    else localStorage.removeItem('adminToken');
+  }, [adminToken]);
 
-  const handleAdminLogin = async (pin) => {
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: Number(pin) })
-      });
-      if (!res.ok) throw new Error('PIN incorrecto');
+  async function adminLogin(){
+    const pin = prompt('PIN Admin:');
+    if(!pin) return;
+    const res = await fetch('/api/auth/admin-login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ pin })
+    });
+    if(res.ok){
       const data = await res.json();
-      localStorage.setItem('adminToken', data.token);
       setAdminToken(data.token);
-      setShowAdminPinModal(false);
-      toast.success('Sesión de administrador iniciada');
-    } catch (error) {
-      toast.error(error.message || 'Error de autenticación');
+      toast.success('Admin habilitado');
+    } else {
+      toast.error('PIN incorrecto');
     }
-  };
-
-  const handleAdminLogout = () => {
-    localStorage.removeItem('adminToken');
-    setAdminToken(null);
-    toast.info('Sesión de administrador cerrada');
-  };
-
+  }
+  function adminLogout(){ setAdminToken(''); }
+  
   const navLinks = [
-    { to: "/", icon: <ShoppingCart size={20} />, label: t.pos },
-    { to: "/products", icon: <Package size={20} />, label: t.products },
-    { to: "/customers", icon: <Users size={20} />, label: t.customers },
-    { to: "/reports", icon: <BarChart size={20} />, label: t.reports },
-    { to: "/export", icon: <FileText size={20} />, label: t.export },
-    { to: "/settings", icon: <Settings size={20} />, label: t.settings },
+    { to: "/", icon: <Home size={18}/>, label: t.pos },
+    { to: "/products", icon: <Package size={18}/>, label: t.products },
+    { to: "/customers", icon: <Users size={18}/>, label: t.customers },
+    { to: "/reports", icon: <BarChart3 size={18}/>, label: t.reports },
+    { to: "/settings", icon: <Cog size={18}/>, label: t.settings },
+    { to: "/export", icon: <Download size={18}/>, label: t.export },
   ];
 
   return (
-    <div className="flex h-screen bg-gray-100 font-body">
+    <div className="min-h-screen grid grid-cols-[260px_1fr] font-body bg-gray-50">
+      <Toaster richColors position="top-center" />
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg p-4 flex flex-col justify-between">
-        <div>
-          {/* Logo */}
-          <div className="mb-8 p-2">
-            <img src="/logo.png" alt="El Paso Furniture & Style POS" className="w-full h-auto" />
-            <p className="text-center text-xs text-gray-500 mt-2 font-heading">Your Comfort, Our Priority</p>
-          </div>
-          <nav className="space-y-2">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) =>
-                  `sidebar-link ${isActive ? 'active' : ''}`
-                }
-              >
-                {link.icon}
-                <span className="ml-3">{link.label}</span>
-              </NavLink>
-            ))}
-          </nav>
+      <aside className="bg-white flex flex-col shadow-lg">
+        <div className="p-4 border-b">
+          <img src="/logo.png" alt="El Paso Furniture & Style Logo" className="w-full h-auto" />
+          <p className="text-center text-xs text-gray-500 mt-2 font-heading">YOUR COMFORT, OUR PRIORITY</p>
         </div>
-        {/* Admin Section */}
-        <div className="p-3 border-t mt-4 space-y-2">
+        <nav className="flex-grow p-4 space-y-2">
+          {navLinks.map(link => <SideLink key={link.to} to={link.to}>{link.icon} {link.label}</SideLink>)}
+        </nav>
+        <div className="p-4 border-t">
           {adminToken ? (
-            <button onClick={handleAdminLogout} className="sidebar-link w-full bg-red-100 text-red-700 hover:bg-red-200">
-              <LogOut size={20} />
-              <span className="ml-3">Cerrar Admin ({t.admin})</span>
-            </button>
-          ) : (
-            <button onClick={() => setShowAdminPinModal(true)} className="sidebar-link w-full">
-              <Lock size={20} />
-              <span className="ml-3">Abrir Admin ({t.admin})</span>
-            </button>
-          )}
+              <button className="btn btn-secondary w-full" onClick={adminLogout}><LogOut size={16}/> {t.logout}</button>
+            ) : (
+              <button className="btn btn-primary w-full" onClick={adminLogin}><Lock size={16}/> {t.admin_login}</button>
+            )}
         </div>
-      </div>
+      </aside>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <Routes>
-          <Route path="/" element={<Pos t={t} adminToken={adminToken} />} />
-          <Route path="/products" element={<Products t={t} adminToken={adminToken} />} />
-          <Route path="/customers" element={<Customers t={t} adminToken={adminToken} />} />
-          <Route path="/reports" element={<Reports t={t} adminToken={adminToken} />} />
-          <Route path="/export" element={<ExportPage t={t} adminToken={adminToken} />} />
-          <Route path="/settings" element={<SettingsPage t={t} adminToken={adminToken} />} />
-        </Routes>
-      </div>
+      <div className="p-6 overflow-auto">
+        <header className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-heading text-gray-800">El Paso Furniture & Style</h1>
+             <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400">v{APP_VERSION}</span>
+                <select className="input w-24" value={lang} onChange={e=>setLang(e.target.value)}>
+                  <option value="es">ES</option>
+                  <option value="en">EN</option>
+                </select>
+             </div>
+        </header>
 
-      {/* Admin PIN Modal */}
-      {showAdminPinModal && (
-        <AdminPinModal
-          onClose={() => setShowAdminPinModal(false)}
-          onLogin={handleAdminLogin}
-          t={t}
-        />
-      )}
-      <Toaster position="bottom-right" />
-    </div>
-  );
-}
-
-function AdminPinModal({ onClose, onLogin, t }) {
-  const [pin, setPin] = useState('');
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onLogin(pin);
-  };
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-80">
-        <h3 className="text-lg font-semibold mb-4">{t.admin_pin_required}</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            className="input text-center text-lg tracking-widest"
-            placeholder="PIN"
-            maxLength="4"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            autoFocus
-          />
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="btn btn-secondary">{t.cancel}</button>
-            <button type="submit" className="btn btn-primary">{t.login}</button>
-          </div>
-        </form>
+        <main>
+          <Routes>
+            <Route path="/" element={<Pos t={t} adminToken={adminToken} />} />
+            <Route path="/products" element={<Products t={t} adminToken={adminToken} />} />
+            <Route path="/customers" element={<Customers t={t} adminToken={adminToken} />} />
+            <Route path="/reports" element={<Reports t={t} />} />
+            <Route path="/settings" element={<Settings t={t} adminToken={adminToken} />} />
+            <Route path="/export" element={<ExportPage t={t} adminToken={adminToken} />} />
+          </Routes>
+        </main>
       </div>
     </div>
   );
 }
-
-export default App;
