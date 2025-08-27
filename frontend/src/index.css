@@ -2,29 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Layout base */
-html, body, #root {
-  height: 100%;
-  background-color: theme('colors.gray.50');
-  font-family: theme('fontFamily.sans');
+@layer base {
+  :root {
+    --color-primary: 231 47 47; /* Rojo del logo (E72F2F) */
+    --color-accent: 0 0 0;    /* Negro del logo */
+    --color-text-light: 100 116 139; /* text-slate-500 */
+    --color-text-dark: 15 23 42;  /* text-slate-900 */
+  }
+
+  /* Aplicar fuentes globalmente */
+  html {
+    font-family: 'Roboto', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Playfair Display', serif;
+  }
 }
 
-/* Tarjetas y botones */
-.card { @apply bg-white rounded-2xl shadow-soft border border-gray-100; }
-.btn  { @apply inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 active:scale-[.99] transition text-sm; }
-.btn-primary { @apply bg-brand text-white border-brand hover:bg-brand-light; }
-
-/* Controles de formulario */
-.input  { @apply w-full px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand/40 text-sm; }
-.select { @apply w-full px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand/40 text-sm; }
-.label  { @apply block mb-1 text-xs font-medium text-gray-600; }
-.badge  { @apply inline-flex items-center px-2 py-1 text-sm rounded-lg bg-gray-100 border border-gray-200; }
-
-/* Sidebar y topbar */
-.sidebar { @apply flex flex-col gap-3 p-4 bg-brand text-white min-h-screen; }
-.sidebar a { @apply flex items-center gap-2 px-3 py-2 rounded-xl text-white hover:bg-brand-light; }
-.sidebar a.active { @apply bg-white text-brand font-semibold shadow; }
-.topbar { @apply flex items-center justify-between bg-white shadow p-3 rounded-xl; }
-
-/* Links generales */
-a { @apply text-brand hover:underline; }
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors;
+  }
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+  .input, .select {
+    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm;
+  }
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  .card {
+    @apply bg-white shadow-md rounded-lg;
+  }
+  .sidebar-link {
+    @apply flex items-center p-3 text-sm font-medium text-gray-700 rounded-md hover:bg-primary-100 hover:text-primary-700;
+  }
+  .sidebar-link.active {
+    @apply bg-primary-600 text-white;
+  }
+}
